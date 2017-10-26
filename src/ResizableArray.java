@@ -1,117 +1,166 @@
-class ResizableArray<Gen> {
+/*
+    Resizable array
+*/
 
-    private int capacity, filled;
+class ResizableArray<Gen extends Comparable<Gen>> {
+
     private Gen[] stuff;
+    private int capacity, filled, startAt, endAt;
 
+    // Constructor
     public ResizableArray() {
         capacity = 10;
-        stuff = (Gen[])new Object[capacity];
+        stuff = (Gen[])(new Comparable[capacity]);
         filled = 0;
+        startAt = 0;
+        endAt = -1;
     }
 
-    public void addAt(Gen what, int where) {
-        // adds what at where
+    // Add to the end of the array
+    public void append(Gen what) {
+        try {
+            addAt(what, endAt + 1);
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        }
+    }
 
+    // Add something somewhere
+    public void addAt(Gen what, int where) throws Exception {
+
+        System.out.println("insert " + what + " at " + where);
+
+        if(where < 0)
+            throw new Exception("Can't insert there.");
+
+        if(!(where >= startAt && where <= endAt + 1))
+            throw new Exception("Insert has to be between the limits");
+
+        if(where <= endAt)
+            slide(where, endAt, true);
+
+        endAt = (where <= endAt) ? endAt + 1 : where;
         stuff[where] = what;
 
-//        ++filled;
-
-         if((float)(++filled)/capacity >= 0.8)
-             resize(false);
+        if((float)++filled/capacity >= 0.8)
+            resize(false);
     }
 
-    public Gen removeFrom(int where) {
-        // removes element from where
-        Gen ans = stuff[where];
-
-//        --filled;
-
-         if((float)(--filled)/capacity <= 0.25)
-             resize(true);
-
-        return ans;
+    public void replace(int where, Gen withWhat) {
+        // It's assumed that validations are correctly performed
+        // before this call
+        stuff[where] = withWhat;
     }
 
+
+    public void remove(Gen what) throws Exception {
+
+        int ind = searchFor(what);
+        if(ind >= filled) throw new Exception("Nothing there to remove");
+
+        if(stuff[ind].compareTo(what) != 0)
+            throw new Exception("Element does not exist");
+
+        removeFrom(ind);
+    }
+
+    public void removeFrom(int where) throws Exception {
+
+        if(where != filled - 1) {
+            slide(where, filled - 1, false);
+        }
+
+        --filled;
+        --endAt;
+    }
+
+    // Slide elements over one place to make room
+    private void slide(int from, int to, boolean right) {
+        System.out.println("from: " + from + ", to: " + to);
+
+        if(right) {
+            for (int i = to; i >= from; i--) {
+                stuff[i + 1] = stuff[i];
+            }
+        } else {
+            for(int i = from + 1; i <= to; i++) {
+                stuff[i - 1] = stuff[i];
+            }
+        }
+    }
+
+    // Bisection search
+    public int searchFor(Gen what) {
+        int from = startAt, to = endAt, mid = 0, cmp;
+
+        //System.out.println("from: " + from + ", to: " + to);
+
+        do {
+            mid = (from + to)/2;
+
+            cmp = stuff[mid].compareTo(what);
+
+            if(cmp == 0)
+                return mid;
+
+            if(cmp > 0)
+                to = mid - 1;
+            else
+                from = mid + 1;
+        } while(from <= to);
+
+        return from;
+    }
+
+
+    public int linearSearchFor(Gen what) throws Exception {
+        int i = startAt;
+        for(i = startAt; i <= endAt; i++)
+            if(stuff[i].compareTo(what) == 0) return i;
+
+        throw new Exception(what + " does not exist");
+    }
+
+
+    // Empty check
     public boolean isEmpty() {
         return filled == 0;
     }
 
-    public int capacity() {
-        return capacity;
-    }
-
-    public int size() {
-        return filled;
-    }
-
-    public Gen peekAt(int where) {
-        // Returns the item at where, but doesn't delete it
-        // Used for printing
-        return stuff[where];
-    }
-
-    /*
-    public void expand(int fromOne, int toOne, int fromTwo, int toTwo) {
-        // Increases the size of the array, and copies stuff
-        // according to the froms and tos
-
-        // System.out.println("entered expand");
-        // System.out.println(fromOne + " " + toOne + " " + fromTwo + " " + toTwo);
-
-        int newcap = capacity * 2;
-        Gen[] newstuff = (Gen[])new Object[newcap];
-
-        // copy stuff one
-        int j = 0;
-        for(int i = fromOne; i < toOne; i++)
-            newstuff[j++] = stuff[i];
-
-        j = newstuff.length;
-        for(int i = fromTwo; i >= toTwo; i--)
-            newstuff[--j] = stuff[i];
-
-        stuff = newstuff;
-        capacity = newcap;
-    }
-    */
-
+    // Resize function
     private void resize(boolean shrink) {
-        // resizes the array
 
-        int newcap = 0;
-
+        int newCap = 0;
         if(shrink) {
-            // make the array smaller
-            newcap = capacity/2;
-
+            newCap = capacity/2;
         } else {
-            // Make the array bigger
-            newcap = capacity * 2;
+            newCap = capacity*2;
         }
 
-        Gen[] newstuff = (Gen[])new Object[newcap];
-        for(int i = 0; i < filled; i++)
-            newstuff[i] = stuff[i];
+        Gen[] newStuff = (Gen[])new Comparable[newCap];
+        //System.out.println("Start: " + startAt + ", end: " + endAt + ", filled: " + filled + ", capacity: " + capacity);
+        System.arraycopy(stuff, 0, newStuff, 0, shrink ? newCap : capacity);
 
-        capacity = newcap;
-        stuff = newstuff;
+        stuff = newStuff;
+        capacity = newCap;
     }
 
-    public void swap(int one, int two) {
-        Gen temp = stuff[one];
-        stuff[one] = stuff[two];
-        stuff[two] = temp;
+    // Get the size (number of elements filled so far)
+    public int size() { return filled; }
+
+    public Gen peekAt(int ind) throws Exception {
+        if(ind < startAt) throw new Exception("Underflow");
+
+        return stuff[ind];
     }
 
+    // Print
     public String toString() {
-        String ans = "[";
-        for(int i = 0; i < filled; i++) {
-            ans += stuff[i];
-            if(i != filled - 1)
-                ans += ", ";
+        StringBuilder s = new StringBuilder();
+        for(int i = startAt; i <= endAt; i++) {
+            if(stuff[i] != null)
+                s.append(stuff[i] + " ");
         }
-        ans += "]";
-
-        return ans;
+        return s.toString();
     }
 }

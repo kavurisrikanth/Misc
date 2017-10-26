@@ -16,6 +16,14 @@ class ElementarySymbolTable<KeyType, ValType> {
         data.insert(key, val);
     }
 
+    public void remove(KeyType key) {
+        data.remove(key);
+    }
+
+    public ValType get(KeyType key) throws Exception {
+        return data.get(key);
+    }
+
     public String toString() {
         //System.out.println("Printing...");
         return data.toString();

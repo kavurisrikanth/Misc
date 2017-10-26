@@ -39,6 +39,38 @@ class STLinkedList<KeyType, ValType> {
         numNodes++;
     }
 
+    public void remove(KeyType key) {
+
+        if(head == null)
+            return;
+
+        if(head.getKey().equals(key)) {
+            head = head.getNext();
+            return;
+        }
+
+        Node<KeyType, ValType> temp = head;
+        while(temp.getNext() != null && !temp.getNext().getKey().equals(key)) {
+            temp = temp.getNext();
+        }
+
+        if(temp.getNext() == null) return;
+
+        temp.setNext(temp.getNext().getNext());
+    }
+
+    public ValType get(KeyType key) throws Exception {
+        Node<KeyType, ValType> temp = head;
+        while(temp != null && !temp.getKey().equals(key)) {
+            temp = temp.getNext();
+        }
+
+        if(temp == null)
+            throw new Exception(key + " doesn't exist");
+
+        return temp.getValue();
+    }
+
     public String toString() {
         String ans = "";
         Node<KeyType, ValType> temp = head;
